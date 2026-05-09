@@ -29,7 +29,7 @@ export const generateProfileText = (props: ExportProps): string => {
     titleText = `${myName}'s Kinky Map`;
   }
   
-  let text = `         😈 ${titleText} 😈 \n\n`;
+  let text = ` 😈 ${titleText} 😈 \n\n`;
 
   const formatIdentity = (name: string, role: string, id: IdentityState, defaultTitle: string) => {
     if (!id.gender && !id.pronouns && !id.orientation && !id.relationship && !role) return "";
@@ -37,7 +37,7 @@ export const generateProfileText = (props: ExportProps): string => {
     const titleName = name ? name.toUpperCase() : defaultTitle.replace("'S IDENTITY", "");
     const title = `${titleName}'S IDENTITY`;
     
-    let section = `        ❖ ── ${title} ── ❖\n`;
+    let section = ` ❖ ── ${title} ── ❖\n`;
     if (role) section += `Role: ${role}\n`;
     if (id.pronouns) section += `Pronouns: ${id.pronouns}\n`;
     if (id.gender) section += `Gender: ${id.gender}\n`;
@@ -49,7 +49,7 @@ export const generateProfileText = (props: ExportProps): string => {
   text += formatIdentity(myName, myRole, meIdentity, 'MY IDENTITY');
   text += formatIdentity(partnerName, partnerRole, partnerIdentity, 'PARTNER IDENTITY');
 
-  text += "        ❖ ── KINK PREFERENCES ── ❖\n";
+  text += " ❖ ── KINK PREFERENCES ── ❖\n";
 
   const getScoreEmoji = (val: number | undefined) => {
     if (val === -2) return "🔴";
