@@ -27,7 +27,17 @@ const [activeTab, setActiveTab] = useState('me');
   const [isIdentityModalOpen, setIsIdentityModalOpen] = useState(false);
   const [appMode, setAppMode] = useState<AppMode>('full'); // <--- ADD THIS
   const { toast } = useToast();
+const allowedModes = appMode === 'curious' ? ['curious'] : 
+                       appMode === 'advanced' ? ['curious', 'advanced'] : 
+                       ['curious', 'advanced', 'full'];
 
+  const visibleCategories = PREFERENCE_CATEGORIES.filter(cat => allowedModes.includes(cat.mode));
+
+  const matchResult = useMemo(() => {
+    return calculateMatchScore(myPreferences, partnerPreferences, appMode);
+  }, [myPreferences, partnerPreferences, appMode]);
+
+  const bothHavePreferences = hasAnyPreferencesSet(myPreferences) && hasAnyPreferencesSet(partnerPreferences);
 const Index = () => {
   const {
     myPreferences,
