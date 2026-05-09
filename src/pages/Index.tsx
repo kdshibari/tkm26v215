@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RotateCcw, Heart, Mail, ExternalLink, Copy } from 'lucide-react';
+import { RotateCcw, Heart, Mail, ExternalLink, Copy, QrCode } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { InfoSection } from '@/components/InfoSection';
 import { PreferenceCategory } from '@/components/PreferenceCategory';
@@ -23,6 +23,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const Index = () => {
   const {
@@ -50,6 +57,11 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState('me');
   const [isIdentityModalOpen, setIsIdentityModalOpen] = useState(false);
   const [appMode, setAppMode] = useState<AppMode>('full');
+  
+  // QR Code State
+  const [qrUrl, setQrUrl] = useState('');
+  const [isQrOpen, setIsQrOpen] = useState(false);
+  
   const { toast } = useToast();
 
   const allowedModes = appMode === 'curious' ? ['curious'] : 
@@ -63,6 +75,12 @@ const Index = () => {
   }, [myPreferences, partnerPreferences, appMode]);
 
   const bothHavePreferences = hasAnyPreferencesSet(myPreferences) && hasAnyPreferencesSet(partnerPreferences);
+
+  const handleShowQr = async () => {
+    const url = await getShareableUrl();
+    setQrUrl(url);
+    setIsQrOpen(true);
+  };
 
   const handleCopyProfile = async () => {
     const rawText = generateProfileText({
@@ -249,14 +267,16 @@ const Index = () => {
                 <h3 className="font-display text-xl font-bold tracking-wide text-primary/90">{myName || 'My Map'}</h3>
               </div>
               <div className="bg-card/80 backdrop-blur-md rounded-2xl p-5 border border-primary/20 shadow-xl">
-                {visibleCategories.map((category) => (
-                  <PreferenceCategory
-                    key={category.id}
-                    category={category}
-                    preferences={myPreferences}
-                    onUpdate={updateMyPreference}
-                  />
-                ))}
+                <Accordion type="multiple" className="w-full space-y-3">
+                  {visibleCategories.map((category) => (
+                    <PreferenceCategory
+                      key={category.id}
+                      category={category}
+                      preferences={myPreferences}
+                      onUpdate={updateMyPreference}
+                    />
+                  ))}
+                </Accordion>
               </div>
             </div>
 
@@ -265,14 +285,16 @@ const Index = () => {
                 <h3 className="font-display text-xl font-bold tracking-wide text-blue-400">{partnerName || 'Partner Map'}</h3>
               </div>
               <div className="bg-card/80 backdrop-blur-md rounded-2xl p-5 border border-blue-500/20 shadow-xl">
-                {visibleCategories.map((category) => (
-                  <PreferenceCategory
-                    key={category.id}
-                    category={category}
-                    preferences={partnerPreferences}
-                    onUpdate={updatePartnerPreference}
-                  />
-                ))}
+                <Accordion type="multiple" className="w-full space-y-3">
+                  {visibleCategories.map((category) => (
+                    <PreferenceCategory
+                      key={category.id}
+                      category={category}
+                      preferences={partnerPreferences}
+                      onUpdate={updatePartnerPreference}
+                    />
+                  ))}
+                </Accordion>
               </div>
             </div>
           </div>
@@ -301,27 +323,31 @@ const Index = () => {
 
               <TabsContent value="me" className="mt-6">
                 <div className="bg-card/80 backdrop-blur-md rounded-2xl p-4 border border-primary/20 shadow-xl">
-                  {visibleCategories.map((category) => (
-                    <PreferenceCategory
-                      key={category.id}
-                      category={category}
-                      preferences={myPreferences}
-                      onUpdate={updateMyPreference}
-                    />
-                  ))}
+                  <Accordion type="multiple" className="w-full space-y-3">
+                    {visibleCategories.map((category) => (
+                      <PreferenceCategory
+                        key={category.id}
+                        category={category}
+                        preferences={myPreferences}
+                        onUpdate={updateMyPreference}
+                      />
+                    ))}
+                  </Accordion>
                 </div>
               </TabsContent>
 
               <TabsContent value="partner" className="mt-6">
                 <div className="bg-card/80 backdrop-blur-md rounded-2xl p-4 border border-blue-500/20 shadow-xl">
-                  {visibleCategories.map((category) => (
-                    <PreferenceCategory
-                      key={category.id}
-                      category={category}
-                      preferences={partnerPreferences}
-                      onUpdate={updatePartnerPreference}
-                    />
-                  ))}
+                  <Accordion type="multiple" className="w-full space-y-3">
+                    {visibleCategories.map((category) => (
+                      <PreferenceCategory
+                        key={category.id}
+                        category={category}
+                        preferences={partnerPreferences}
+                        onUpdate={updatePartnerPreference}
+                      />
+                    ))}
+                  </Accordion>
                 </div>
               </TabsContent>
             </Tabs>
@@ -371,8 +397,11 @@ const Index = () => {
                 <p className="text-[10px] text-muted-foreground">Links are stored anonymously.</p>
               </div>
               
-              <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <div className="flex flex-wrap justify-center gap-4">
                 <ShareButtons getShareableUrl={getShareableUrl} />
+                <Button onClick={handleShowQr} variant="secondary" className="bg-[#1a1a20] hover:bg-[#9ca3af]/20 text-[#9ca3af] transition-colors rounded-xl border border-[#9ca3af]/30 h-10 px-4">
+                  <QrCode className="w-4 h-4 mr-2" /> QR Code
+                </Button>
                 <Button onClick={handleCopyProfile} variant="secondary" className="w-full sm:w-auto bg-[#1a1a20] hover:bg-[#9ca3af]/20 text-[#9ca3af] transition-colors rounded-xl border border-[#9ca3af]/30 h-10 text-sm px-6">
                   <Copy className="w-4 h-4 mr-2" /> 
                   Copy Profile to Text
@@ -567,7 +596,7 @@ const Index = () => {
           </div>
         </footer>
 
-        {/* MOBILE STICKY ACTION BAR - Now safely inside the container */}
+        {/* MOBILE STICKY ACTION BAR */}
         <div className="lg:hidden fixed bottom-4 left-4 right-4 z-40">
           <div className="bg-card/95 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl p-3 flex items-center justify-between">
             <div className="flex flex-col">
@@ -577,7 +606,10 @@ const Index = () => {
               </span>
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleCopyProfile} size="sm" className="bg-[#1a1a20] border border-white/10 rounded-xl">
+              <Button onClick={handleShowQr} size="sm" className="bg-[#1a1a20] border border-white/10 rounded-xl px-2">
+                <QrCode className="w-4 h-4" />
+              </Button>
+              <Button onClick={handleCopyProfile} size="sm" className="bg-[#1a1a20] border border-white/10 rounded-xl px-2">
                 <Copy className="w-4 h-4" />
               </Button>
               <ShareButtons getShareableUrl={getShareableUrl} />
@@ -585,7 +617,7 @@ const Index = () => {
           </div>
         </div>
 
-        {/* IDENTITY MODAL - Restored */}
+        {/* IDENTITY MODAL */}
         <IdentityModal
           isOpen={isIdentityModalOpen}
           onClose={() => setIsIdentityModalOpen(false)}
@@ -597,6 +629,30 @@ const Index = () => {
           partnerName={partnerName}
         />
         
+        {/* QR CODE DIALOG */}
+        <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
+          <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-white/10 rounded-2xl border">
+            <DialogHeader>
+              <DialogTitle className="text-center font-display tracking-wide text-foreground">Share in Person</DialogTitle>
+              <DialogDescription className="text-center text-xs text-muted-foreground">
+                Let your partner scan this code to compare maps instantly.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-center p-6 bg-white rounded-xl mx-auto my-4 w-fit shadow-inner">
+              {qrUrl ? (
+                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}`} alt="Shareable QR Code" className="w-[200px] h-[200px]" />
+              ) : (
+                <div className="w-[200px] h-[200px] flex items-center justify-center animate-pulse bg-gray-200 rounded-lg text-gray-500 font-bold">
+                  Loading...
+                </div>
+              )}
+            </div>
+            <div className="text-center">
+              <Button onClick={() => setIsQrOpen(false)} variant="secondary" className="rounded-xl w-full bg-[#1a1a20] border border-white/10 text-white hover:bg-white/10">Close</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </div>
   );
