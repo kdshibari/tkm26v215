@@ -1,57 +1,38 @@
-import { useState, useEffect } from 'react';
-// ... keep your other imports here
+import { useState, useEffect, useCallback } from 'react';
+import LZString from 'lz-string';
+import { supabase } from '@/lib/supabase';
+import { Preferences, PreferenceValue, PREFERENCE_CATEGORIES } from '@/data/preferences';
+import { IdentityState } from '../IdentityData';
 
 const STORAGE_KEY = 'kinkymap_save_data';
 
-export const usePreferences = () => {
-  // 1. Load saved data before initializing state
-  const loadSavedData = () => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error("Failed to load local storage", e);
-    }
-    return null;
-  };
+export interface StoredState {
+  me?: Preferences;
+  partner?: Preferences;
+  myName?: string;
+  partnerName?: string;
+  myRole?: string;
+  partnerRole?: string;
+  meIdentity?: IdentityState;
+  partnerIdentity?: IdentityState;
+}
 
-  const savedData = loadSavedData();
+const defaultIdentity: IdentityState = {
+  pronouns: '',
+  gender: '',
+  orientation: '',
+  relationship: ''
+};
 
-  // 2. Initialize state with saved data or defaults
-  const [myPreferences, setMyPreferences] = useState<Preferences>(savedData?.myPreferences || {});
-  const [partnerPreferences, setPartnerPreferences] = useState<Preferences>(savedData?.partnerPreferences || {});
-  const [myName, setMyName] = useState(savedData?.myName || '');
-  const [partnerName, setPartnerName] = useState(savedData?.partnerName || '');
-  const [myRole, setMyRole] = useState(savedData?.myRole || '');
-  const [partnerRole, setPartnerRole] = useState(savedData?.partnerRole || '');
-  const [meIdentity, setMeIdentity] = useState<IdentityState>(savedData?.meIdentity || defaultIdentity);
-  const [partnerIdentity, setPartnerIdentity] = useState<IdentityState>(savedData?.partnerIdentity || defaultIdentity);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // 3. Auto save to local storage whenever any state changes
-  useEffect(() => {
-    const dataToSave = {
-      myPreferences, partnerPreferences,
-      myName, partnerName,
-      myRole, partnerRole,
-      meIdentity, partnerIdentity
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-  }, [myPreferences, partnerPreferences, myName, partnerName, myRole, partnerRole, meIdentity, partnerIdentity]);
-
-
-  // 4. Update your resetAll function so it also clears the storage
-  const resetAll = () => {
-    setMyPreferences({});
-    setPartnerPreferences({});
-    setMyName('');
-    setPartnerName('');
-    setMyRole('');
-    setPartnerRole('');
-    setMeIdentity(defaultIdentity);
-    setPartnerIdentity(defaultIdentity);
-    localStorage.removeItem(STORAGE_KEY);
-  };
+const getDefaultPreferences = (): Preferences => {
+  const prefs: Preferences = {};
+  PREFERENCE_CATEGORIES.forEach(category => {
+    category.items.forEach(item => {
+      prefs[item.key] = 0;
+    });
+  });
+  return prefs;
+};
 
 const encodeState = (state: StoredState): string => {
   try {
@@ -67,15 +48,17 @@ const decodeState = (encoded: string): StoredState | null => {
   } catch { return null; }
 };
 
-// Synchronously pull initial data so it never overwrites with blanks
+// Synchronously pull initial data from URL or Local Storage
 const getInitialState = (): Partial<StoredState> => {
   const hash = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
   
+  // 1. Check for legacy long URL
   if (hash && !hash.startsWith('map=')) {
     const decoded = decodeState(hash);
     if (decoded) return decoded;
   }
 
+  // 2. Check for Local Storage Auto-save
   if (typeof window !== 'undefined') {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
@@ -98,7 +81,6 @@ export const usePreferences = () => {
   const [myRole, setMyRole] = useState(initialState.myRole || '');
   const [partnerRole, setPartnerRole] = useState(initialState.partnerRole || '');
   
-  // Connect identity states to initial stored data
   const [meIdentity, setMeIdentity] = useState<IdentityState>(initialState.meIdentity || defaultIdentity);
   const [partnerIdentity, setPartnerIdentity] = useState<IdentityState>(initialState.partnerIdentity || defaultIdentity);
   
@@ -171,7 +153,7 @@ export const usePreferences = () => {
     setPartnerRole('');
     setMeIdentity(defaultIdentity);
     setPartnerIdentity(defaultIdentity);
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY); // Clear auto-save on reset
     window.history.replaceState({}, '', window.location.pathname);
   }, []);
 
