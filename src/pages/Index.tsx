@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePreferences } from '@/hooks/usePreferences';
 import { useToast } from '@/hooks/use-toast';
-import { PREFERENCE_CATEGORIES, AppMode } from '@/data/preferences';
+import { PREFERENCE_CATEGORIES } from '@/data/preferences';
 import { calculateMatchScore, hasAnyPreferencesSet } from '@/utils/matchScore';
 import { DisclaimerSection } from '@/components/DisclaimerSection';
 import { IdentityState } from '../IdentityData';
@@ -48,20 +48,14 @@ const Index = () => {
 
   const [activeTab, setActiveTab] = useState('me');
   const [isIdentityModalOpen, setIsIdentityModalOpen] = useState(false);
-  const [appMode, setAppMode] = useState<AppMode>('full');
   const { toast } = useToast();
 
-  const allowedModes = appMode === 'curious' ? ['curious'] : 
-                       appMode === 'advanced' ? ['curious', 'advanced'] : 
-                       ['curious', 'advanced', 'full'];
-
-  const visibleCategories = PREFERENCE_CATEGORIES.filter(cat => allowedModes.includes(cat.mode as string));
-
   const matchResult = useMemo(() => {
-    return calculateMatchScore(myPreferences, partnerPreferences, appMode);
-  }, [myPreferences, partnerPreferences, appMode]);
+    return calculateMatchScore(myPreferences, partnerPreferences);
+  }, [myPreferences, partnerPreferences]);
 
   const bothHavePreferences = hasAnyPreferencesSet(myPreferences) && hasAnyPreferencesSet(partnerPreferences);
+  const visibleCategories = PREFERENCE_CATEGORIES;
 
   const handleCopyProfile = async () => {
     let titleText = 'My Kinky Map';
@@ -106,7 +100,7 @@ const Index = () => {
       const padding = Math.max(0, 21 - Math.floor(namesLine.length / 2));
       text += " ".repeat(padding) + namesLine + "\n\n";
 
-      visibleCategories.forEach(category => {
+      PREFERENCE_CATEGORIES.forEach(category => {
         let hasItems = false;
         let catText = `✦ ${category.name.toUpperCase()} ✦\n`;
 
@@ -128,7 +122,7 @@ const Index = () => {
       });
     } else {
       text += `\n`;
-      visibleCategories.forEach(category => {
+      PREFERENCE_CATEGORIES.forEach(category => {
         const allHard = category.items.every(item => myPreferences[item.key] === -2);
         if (allHard) return; 
 
@@ -243,27 +237,6 @@ const Index = () => {
              <InfoSection />
           </div>
 
-          <div className="max-w-md mx-auto mt-6 bg-card/80 backdrop-blur-md rounded-2xl p-1.5 border border-white/10 flex shadow-lg">
-            <button
-              onClick={() => setAppMode('curious')}
-              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${appMode === 'curious' ? 'bg-primary text-white shadow-md' : 'text-muted-foreground hover:text-white hover:bg-white/5'}`}
-            >
-              Curious
-            </button>
-            <button
-              onClick={() => setAppMode('advanced')}
-              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${appMode === 'advanced' ? 'bg-blue-500 text-white shadow-md' : 'text-muted-foreground hover:text-white hover:bg-white/5'}`}
-            >
-              Advanced
-            </button>
-            <button
-              onClick={() => setAppMode('full')}
-              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${appMode === 'full' ? 'bg-purple-500 text-white shadow-md' : 'text-muted-foreground hover:text-white hover:bg-white/5'}`}
-            >
-              Full
-            </button>
-          </div>
-
           <motion.div
             className="bg-card/80 backdrop-blur-md rounded-2xl p-5 border border-white/10 space-y-4 max-w-4xl mx-auto shadow-xl"
             initial={{ opacity: 0, y: 20 }}
@@ -311,7 +284,7 @@ const Index = () => {
             
             <button
               onClick={() => setIsIdentityModalOpen(true)}
-              className="w-full mt-5 p-3.5 bg-gradient-to-r from-primary/10 via-background/40 to-blue-500/10 hover:from-primary/20 hover:to-blue-500/20 border border-white/10 hover:border-white/20 text-foreground/80 hover:text-foreground rounded-xl font-display font-semibold tracking-wide transition-all duration-300 shadow-sm"
+              className="w-full mt-4 p-3 bg-[#36454F] hover:bg-[#274D60] text-white rounded-lg font-bold transition-colors text-sm"
             >
               How Do We Identify?
             </button>
@@ -463,6 +436,51 @@ const Index = () => {
         </main>
 
         <footer className="mt-16 space-y-12 max-w-2xl mx-auto">
+          {/* SEO FAQ Section */}
+          <div className="bg-card/80 backdrop-blur-md rounded-3xl p-6 border border-white/10 shadow-xl">
+            <h5 className="text-[14px] font-bold text-center uppercase tracking-[0.2em] text-muted-foreground mb-6">
+              Frequently Asked Questions
+            </h5>
+            
+            <Accordion type="single" collapsible className="space-y-3 w-full">
+              <AccordionItem value="faq-1" className="border border-white/5 bg-background/50 rounded-xl px-3 border-b-0">
+                <AccordionTrigger className="hover:no-underline py-3">
+                  <span className="font-bold text-white/90 text-sm text-left">What are the best online kink and BDSM quizzes for couples?</span>
+                </AccordionTrigger>
+                <AccordionContent className="text-xs text-muted-foreground/80 pt-1 pb-4 leading-relaxed">
+                  The Kinky Map is designed to be the ultimate <strong>kink compatibility quiz for partners</strong>. Unlike a standard <strong>bdsm test</strong> or standard <strong>kink quiz</strong>, it acts as a comprehensive, visually engaging map to explore your shared interests safely and privately.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="faq-2" className="border border-white/5 bg-background/50 rounded-xl px-3 border-b-0">
+                <AccordionTrigger className="hover:no-underline py-3">
+                  <span className="font-bold text-white/90 text-sm text-left">Where can I take a kinky partner test online?</span>
+                </AccordionTrigger>
+                <AccordionContent className="text-xs text-muted-foreground/80 pt-1 pb-4 leading-relaxed">
+                  You can take our interactive <strong>kinky partner test</strong> right here, completely free and securely. Just fill out your preferences, generate a private link, and share it with your partner to compare your <strong>bdsm</strong> and <strong>kink</strong> boundaries side-by-side.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="faq-3" className="border border-white/5 bg-background/50 rounded-xl px-3 border-b-0">
+                <AccordionTrigger className="hover:no-underline py-3">
+                  <span className="font-bold text-white/90 text-sm text-left">Is there a free BDSM quiz to discover my interests?</span>
+                </AccordionTrigger>
+                <AccordionContent className="text-xs text-muted-foreground/80 pt-1 pb-4 leading-relaxed">
+                  Yes! Our <strong>free BDSM quiz</strong> allows you to navigate through dozens of carefully curated categories. Whether you are experienced or just looking for a beginner <strong>kink test</strong> to figure out what you might enjoy, this tool helps you discover your interests securely.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="faq-4" className="border border-white/5 bg-background/50 rounded-xl px-3 border-b-0">
+                <AccordionTrigger className="hover:no-underline py-3">
+                  <span className="font-bold text-white/90 text-sm text-left">How to talk about kinky preferences with a new partner?</span>
+                </AccordionTrigger>
+                <AccordionContent className="text-xs text-muted-foreground/80 pt-1 pb-4 leading-relaxed">
+                  Communication is key in any relationship. Using a <strong>quiz</strong> or negotiation tool like The Kinky Map makes it much easier to break the ice. Instead of guessing, you both fill out the <strong>test</strong> separately, and the system automatically calculates your match score and highlights your overlapping desires.
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+
           {/* Consent and Safety Section */}
           <div className="bg-card/80 backdrop-blur-md rounded-3xl p-6 border border-white/10 shadow-xl">
             <h5 className="text-[14px] font-bold text-center uppercase tracking-[0.2em] text-muted-foreground mb-2">
@@ -566,51 +584,6 @@ const Index = () => {
             <p className="text-xs italic mt-6 pt-4 border-t border-white/5 text-center text-rose-400/80 font-medium tracking-wide">
               Be safe, have fun, and respect boundaries.
             </p>
-          </div>
-
-          {/* SEO FAQ Section */}
-          <div className="bg-card/80 backdrop-blur-md rounded-3xl p-6 border border-white/10 shadow-xl">
-            <h5 className="text-[14px] font-bold text-center uppercase tracking-[0.2em] text-muted-foreground mb-6">
-              Frequently Asked Questions
-            </h5>
-            
-            <Accordion type="single" collapsible className="space-y-3 w-full">
-              <AccordionItem value="faq-1" className="border border-white/5 bg-background/50 rounded-xl px-3 border-b-0">
-                <AccordionTrigger className="hover:no-underline py-3">
-                  <span className="font-bold text-white/90 text-sm text-left">What are the best online kink and BDSM quizzes for couples?</span>
-                </AccordionTrigger>
-                <AccordionContent className="text-xs text-muted-foreground/80 pt-1 pb-4 leading-relaxed">
-                  The Kinky Map is designed to be the ultimate <strong>kink compatibility quiz for partners</strong>. Unlike a standard <strong>bdsm test</strong> or standard <strong>kink quiz</strong>, it acts as a comprehensive, visually engaging map to explore your shared interests safely and privately.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="faq-2" className="border border-white/5 bg-background/50 rounded-xl px-3 border-b-0">
-                <AccordionTrigger className="hover:no-underline py-3">
-                  <span className="font-bold text-white/90 text-sm text-left">Where can I take a kinky partner test online?</span>
-                </AccordionTrigger>
-                <AccordionContent className="text-xs text-muted-foreground/80 pt-1 pb-4 leading-relaxed">
-                  You can take our interactive <strong>kinky partner test</strong> right here, completely free and securely. Just fill out your preferences, generate a private link, and share it with your partner to compare your <strong>bdsm</strong> and <strong>kink</strong> boundaries side-by-side.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="faq-3" className="border border-white/5 bg-background/50 rounded-xl px-3 border-b-0">
-                <AccordionTrigger className="hover:no-underline py-3">
-                  <span className="font-bold text-white/90 text-sm text-left">Is there a free BDSM quiz to discover my interests?</span>
-                </AccordionTrigger>
-                <AccordionContent className="text-xs text-muted-foreground/80 pt-1 pb-4 leading-relaxed">
-                  Yes! Our <strong>free BDSM quiz</strong> allows you to navigate through dozens of carefully curated categories. Whether you are experienced or just looking for a beginner <strong>kink test</strong> to figure out what you might enjoy, this tool helps you discover your interests securely.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="faq-4" className="border border-white/5 bg-background/50 rounded-xl px-3 border-b-0">
-                <AccordionTrigger className="hover:no-underline py-3">
-                  <span className="font-bold text-white/90 text-sm text-left">How to talk about kinky preferences with a new partner?</span>
-                </AccordionTrigger>
-                <AccordionContent className="text-xs text-muted-foreground/80 pt-1 pb-4 leading-relaxed">
-                  Communication is key in any relationship. Using a <strong>quiz</strong> or negotiation tool like The Kinky Map makes it much easier to break the ice. Instead of guessing, you both fill out the <strong>test</strong> separately, and the system automatically calculates your match score and highlights your overlapping desires.
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
           </div>
 
           <div className="px-2">
