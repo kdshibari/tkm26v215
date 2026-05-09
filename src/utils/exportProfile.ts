@@ -29,7 +29,7 @@ export const generateProfileText = (props: ExportProps): string => {
     titleText = `${myName}'s Kinky Map`;
   }
   
-  let text = `         🗺️ 😈 ${titleText} 😈 🗺️\n\n`;
+  let text = `         😈 ${titleText} 😈 \n\n`;
 
   const formatIdentity = (name: string, role: string, id: IdentityState, defaultTitle: string) => {
     if (!id.gender && !id.pronouns && !id.orientation && !id.relationship && !role) return "";
@@ -38,11 +38,11 @@ export const generateProfileText = (props: ExportProps): string => {
     const title = `${titleName}'S IDENTITY`;
     
     let section = `        ❖ ── ${title} ── ❖\n`;
-    if (role) section += `🎭 Role: ${role}\n`;
-    if (id.pronouns) section += `🗣️ Pronouns: ${id.pronouns}\n`;
-    if (id.gender) section += `👤 Gender: ${id.gender}\n`;
-    if (id.orientation) section += `🌈 Orientation: ${id.orientation}\n`;
-    if (id.relationship) section += `🔗 Dating: ${id.relationship}\n`;
+    if (role) section += `Role: ${role}\n`;
+    if (id.pronouns) section += `Pronouns: ${id.pronouns}\n`;
+    if (id.gender) section += `Gender: ${id.gender}\n`;
+    if (id.orientation) section += `Orientation: ${id.orientation}\n`;
+    if (id.relationship) section += `Dating: ${id.relationship}\n`;
     return section + `\n`;
   };
 
