@@ -610,16 +610,31 @@ const Index = () => {
             </div>
           </div>
         </footer>
-        
-        <IdentityModal
-          isOpen={isIdentityModalOpen}
-          onClose={() => setIsIdentityModalOpen(false)}
-          meIdentity={meIdentity}
-          setMeIdentity={setMeIdentity}
-          partnerIdentity={partnerIdentity}
-          setPartnerIdentity={setPartnerIdentity}
-          myName={myName}
-          partnerName={partnerName}
+
+        {/* ENHANCED EXPERIENCE LEVEL SELECTOR */}
+          <div className="max-w-xl mx-auto mt-6 bg-card/80 backdrop-blur-md rounded-2xl p-2 border border-white/10 flex shadow-lg gap-2">
+            <button
+              onClick={() => setAppMode('curious')}
+              className={`flex-1 flex flex-col items-center justify-center py-3 px-1 rounded-xl transition-all duration-300 ${appMode === 'curious' ? 'bg-primary/90 text-white shadow-md scale-[1.02]' : 'text-muted-foreground hover:text-white hover:bg-white/5'}`}
+            >
+              <span className="text-xs font-bold uppercase tracking-wider">Curious</span>
+              <span className="text-[9px] opacity-70 mt-1 hidden sm:block">The Basics</span>
+            </button>
+            <button
+              onClick={() => setAppMode('advanced')}
+              className={`flex-1 flex flex-col items-center justify-center py-3 px-1 rounded-xl transition-all duration-300 ${appMode === 'advanced' ? 'bg-blue-500/90 text-white shadow-md scale-[1.02]' : 'text-muted-foreground hover:text-white hover:bg-white/5'}`}
+            >
+              <span className="text-xs font-bold uppercase tracking-wider">Advanced</span>
+              <span className="text-[9px] opacity-70 mt-1 hidden sm:block">Impact & Bondage</span>
+            </button>
+            <button
+              onClick={() => setAppMode('full')}
+              className={`flex-1 flex flex-col items-center justify-center py-3 px-1 rounded-xl transition-all duration-300 ${appMode === 'full' ? 'bg-purple-500/90 text-white shadow-md scale-[1.02]' : 'text-muted-foreground hover:text-white hover:bg-white/5'}`}
+            >
+              <span className="text-xs font-bold uppercase tracking-wider">Full</span>
+              <span className="text-[9px] opacity-70 mt-1 hidden sm:block">Everything</span>
+            </button>
+          </div>
         />
         
       </div>
