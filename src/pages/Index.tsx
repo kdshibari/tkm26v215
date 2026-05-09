@@ -57,27 +57,24 @@ const Index = () => {
   const bothHavePreferences = hasAnyPreferencesSet(myPreferences) && hasAnyPreferencesSet(partnerPreferences);
   const visibleCategories = PREFERENCE_CATEGORIES;
 
-  const handleCopyProfile = async () => {
-    let titleText = 'My Kinky Map';
-    if (myName && partnerName) {
-      titleText = `${myName} & ${partnerName}'s Kinky Map`;
-    } else if (myName) {
-      titleText = `${myName}'s Kinky Map`;
-    }
-    
-    let text = `         🗺️ 😈 ${titleText} 😈 🗺️\n\n`;
-
-    const formatIdentity = (name: string, id: IdentityState, defaultTitle: string) => {
-      if (!id.gender && !id.pronouns && !id.orientation && !id.relationship) return "";
+  const formatIdentity = (name: string, role: string, id: IdentityState, defaultTitle: string) => {
+      if (!id.gender && !id.pronouns && !id.orientation && !id.relationship && !role) return "";
       
-      const title = name ? `${name.toUpperCase()}'S IDENTITY` : defaultTitle;
+      const titleName = name ? name.toUpperCase() : defaultTitle.replace("'S IDENTITY", "");
+      const title = `${titleName}'S IDENTITY`;
+      
       let section = `        ❖ ── ${title} ── ❖\n`;
+      if (role) section += `🎭 Role: ${role}\n`; // <-- Added Role export
       if (id.pronouns) section += `🗣️ Pronouns: ${id.pronouns}\n`;
       if (id.gender) section += `👤 Gender: ${id.gender}\n`;
       if (id.orientation) section += `🌈 Orientation: ${id.orientation}\n`;
       if (id.relationship) section += `🔗 Dating: ${id.relationship}\n`;
       return section + `\n`;
     };
+
+    // And update how it's called right below it:
+    text += formatIdentity(myName, myRole, meIdentity, 'MY IDENTITY');
+    text += formatIdentity(partnerName, partnerRole, partnerIdentity, 'PARTNER IDENTITY');
 
     text += formatIdentity(myName, meIdentity, 'MY IDENTITY');
     text += formatIdentity(partnerName, partnerIdentity, 'PARTNER IDENTITY');
