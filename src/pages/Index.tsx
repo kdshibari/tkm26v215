@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePreferences } from '@/hooks/usePreferences';
 import { useToast } from '@/hooks/use-toast';
-import { PREFERENCE_CATEGORIES } from '@/data/preferences';
+import { PREFERENCE_CATEGORIES, AppMode } from '@/data/preferences';
 import { calculateMatchScore, hasAnyPreferencesSet } from '@/utils/matchScore';
 import { DisclaimerSection } from '@/components/DisclaimerSection';
 import { IdentityState } from '../IdentityData';
@@ -22,22 +22,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { PREFERENCE_CATEGORIES, AppMode } from '@/data/preferences';
-const [activeTab, setActiveTab] = useState('me');
-  const [isIdentityModalOpen, setIsIdentityModalOpen] = useState(false);
-  const [appMode, setAppMode] = useState<AppMode>('full'); // <--- ADD THIS
-  const { toast } = useToast();
-const allowedModes = appMode === 'curious' ? ['curious'] : 
-                       appMode === 'advanced' ? ['curious', 'advanced'] : 
-                       ['curious', 'advanced', 'full'];
 
-  const visibleCategories = PREFERENCE_CATEGORIES.filter(cat => allowedModes.includes(cat.mode));
-
-  const matchResult = useMemo(() => {
-    return calculateMatchScore(myPreferences, partnerPreferences, appMode);
-  }, [myPreferences, partnerPreferences, appMode]);
-
-  const bothHavePreferences = hasAnyPreferencesSet(myPreferences) && hasAnyPreferencesSet(partnerPreferences);
 const Index = () => {
   const {
     myPreferences,
@@ -63,14 +48,20 @@ const Index = () => {
 
   const [activeTab, setActiveTab] = useState('me');
   const [isIdentityModalOpen, setIsIdentityModalOpen] = useState(false);
+  const [appMode, setAppMode] = useState<AppMode>('full');
   const { toast } = useToast();
 
+  const allowedModes = appMode === 'curious' ? ['curious'] : 
+                       appMode === 'advanced' ? ['curious', 'advanced'] : 
+                       ['curious', 'advanced', 'full'];
+
+  const visibleCategories = PREFERENCE_CATEGORIES.filter(cat => allowedModes.includes(cat.mode as string));
+
   const matchResult = useMemo(() => {
-    return calculateMatchScore(myPreferences, partnerPreferences);
-  }, [myPreferences, partnerPreferences]);
+    return calculateMatchScore(myPreferences, partnerPreferences, appMode);
+  }, [myPreferences, partnerPreferences, appMode]);
 
   const bothHavePreferences = hasAnyPreferencesSet(myPreferences) && hasAnyPreferencesSet(partnerPreferences);
-  const visibleCategories = PREFERENCE_CATEGORIES;
 
   const handleCopyProfile = async () => {
     let titleText = 'My Kinky Map';
@@ -80,24 +71,24 @@ const Index = () => {
       titleText = `${myName}'s Kinky Map`;
     }
     
-    let text = `😈 ${titleText} 😈\n\n`;
+    let text = `         🗺️ 😈 ${titleText} 😈 🗺️\n\n`;
 
     const formatIdentity = (name: string, id: IdentityState, defaultTitle: string) => {
       if (!id.gender && !id.pronouns && !id.orientation && !id.relationship) return "";
       
       const title = name ? `${name.toUpperCase()}'S IDENTITY` : defaultTitle;
-      let section = `❖ ── ${title} ── ❖\n`;
-      if (id.pronouns) section += `Pronouns: ${id.pronouns}\n`;
-      if (id.gender) section += `Gender: ${id.gender}\n`;
-      if (id.orientation) section += `Orientation: ${id.orientation}\n`;
-      if (id.relationship) section += `Dating: ${id.relationship}\n`;
+      let section = `        ❖ ── ${title} ── ❖\n`;
+      if (id.pronouns) section += `🗣️ Pronouns: ${id.pronouns}\n`;
+      if (id.gender) section += `👤 Gender: ${id.gender}\n`;
+      if (id.orientation) section += `🌈 Orientation: ${id.orientation}\n`;
+      if (id.relationship) section += `🔗 Dating: ${id.relationship}\n`;
       return section + `\n`;
     };
 
     text += formatIdentity(myName, meIdentity, 'MY IDENTITY');
     text += formatIdentity(partnerName, partnerIdentity, 'PARTNER IDENTITY');
 
-    text += "❖ ── KINK PREFERENCES ── ❖\n";
+    text += "        ❖ ── KINK PREFERENCES ── ❖\n";
 
     const getScoreEmoji = (val: number | undefined) => {
       if (val === -2) return "🔴";
@@ -115,7 +106,7 @@ const Index = () => {
       const padding = Math.max(0, 21 - Math.floor(namesLine.length / 2));
       text += " ".repeat(padding) + namesLine + "\n\n";
 
-      PREFERENCE_CATEGORIES.forEach(category => {
+      visibleCategories.forEach(category => {
         let hasItems = false;
         let catText = `✦ ${category.name.toUpperCase()} ✦\n`;
 
@@ -137,7 +128,7 @@ const Index = () => {
       });
     } else {
       text += `\n`;
-      PREFERENCE_CATEGORIES.forEach(category => {
+      visibleCategories.forEach(category => {
         const allHard = category.items.every(item => myPreferences[item.key] === -2);
         if (allHard) return; 
 
@@ -160,7 +151,7 @@ const Index = () => {
     }
 
     try {
-      const getFooter = (url: string) => text + `──────────────────────\nCompare maps with me here:\n${url}`;
+      const getFooter = (url: string) => text + `──────────────────────\n🔗 Compare maps with me here:\n${url}`;
 
       if (navigator.clipboard && (window as any).ClipboardItem) {
         const textBlobPromise = getShareableUrl().then(url => 
@@ -250,6 +241,27 @@ const Index = () => {
         <main className="space-y-6">
           <div className="max-w-3xl mx-auto">
              <InfoSection />
+          </div>
+
+          <div className="max-w-md mx-auto mt-6 bg-card/80 backdrop-blur-md rounded-2xl p-1.5 border border-white/10 flex shadow-lg">
+            <button
+              onClick={() => setAppMode('curious')}
+              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${appMode === 'curious' ? 'bg-primary text-white shadow-md' : 'text-muted-foreground hover:text-white hover:bg-white/5'}`}
+            >
+              Curious
+            </button>
+            <button
+              onClick={() => setAppMode('advanced')}
+              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${appMode === 'advanced' ? 'bg-blue-500 text-white shadow-md' : 'text-muted-foreground hover:text-white hover:bg-white/5'}`}
+            >
+              Advanced
+            </button>
+            <button
+              onClick={() => setAppMode('full')}
+              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${appMode === 'full' ? 'bg-purple-500 text-white shadow-md' : 'text-muted-foreground hover:text-white hover:bg-white/5'}`}
+            >
+              Full
+            </button>
           </div>
 
           <motion.div
