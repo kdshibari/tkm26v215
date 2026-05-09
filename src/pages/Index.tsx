@@ -23,6 +23,23 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
+{/* MOBILE STICKY ACTION BAR */}
+          <div className="lg:hidden fixed bottom-4 left-4 right-4 z-40">
+            <div className="bg-card/95 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl p-3 flex items-center justify-between">
+               <div className="flex flex-col">
+                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Match Score</span>
+                 <span className="text-lg font-bold text-primary">
+                    {bothHavePreferences ? `${matchResult.overallScore}%` : 'Pending'}
+                 </span>
+               </div>
+               <div className="flex gap-2">
+                 <Button onClick={handleCopyProfile} size="sm" className="bg-[#1a1a20] border border-white/10 rounded-xl">
+                   <Copy className="w-4 h-4" />
+                 </Button>
+                 <ShareButtons getShareableUrl={getShareableUrl} />
+               </div>
+            </div>
+          </div>
 const Index = () => {
   const {
     myPreferences,
