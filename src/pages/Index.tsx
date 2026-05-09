@@ -11,11 +11,12 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePreferences } from '@/hooks/usePreferences';
 import { useToast } from '@/hooks/use-toast';
-import { PREFERENCE_CATEGORIES } from '@/data/preferences';
+import { PREFERENCE_CATEGORIES, AppMode } from '@/data/preferences';
 import { calculateMatchScore, hasAnyPreferencesSet } from '@/utils/matchScore';
 import { DisclaimerSection } from '@/components/DisclaimerSection';
 import { IdentityState } from '../IdentityData';
 import { IdentityModal } from '../IdentityModal';
+import { generateProfileText } from '@/utils/exportProfile';
 import {
   Accordion,
   AccordionContent,
@@ -23,23 +24,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-{/* MOBILE STICKY ACTION BAR */}
-          <div className="lg:hidden fixed bottom-4 left-4 right-4 z-40">
-            <div className="bg-card/95 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl p-3 flex items-center justify-between">
-               <div className="flex flex-col">
-                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Match Score</span>
-                 <span className="text-lg font-bold text-primary">
-                    {bothHavePreferences ? `${matchResult.overallScore}%` : 'Pending'}
-                 </span>
-               </div>
-               <div className="flex gap-2">
-                 <Button onClick={handleCopyProfile} size="sm" className="bg-[#1a1a20] border border-white/10 rounded-xl">
-                   <Copy className="w-4 h-4" />
-                 </Button>
-                 <ShareButtons getShareableUrl={getShareableUrl} />
-               </div>
-            </div>
-          </div>
 const Index = () => {
   const {
     myPreferences,
@@ -65,101 +49,31 @@ const Index = () => {
 
   const [activeTab, setActiveTab] = useState('me');
   const [isIdentityModalOpen, setIsIdentityModalOpen] = useState(false);
+  const [appMode, setAppMode] = useState<AppMode>('full');
   const { toast } = useToast();
 
+  const allowedModes = appMode === 'curious' ? ['curious'] : 
+                       appMode === 'advanced' ? ['curious', 'advanced'] : 
+                       ['curious', 'advanced', 'full'];
+
+  const visibleCategories = PREFERENCE_CATEGORIES.filter(cat => allowedModes.includes(cat.mode as string));
+
   const matchResult = useMemo(() => {
-    return calculateMatchScore(myPreferences, partnerPreferences);
-  }, [myPreferences, partnerPreferences]);
+    return calculateMatchScore(myPreferences, partnerPreferences, appMode);
+  }, [myPreferences, partnerPreferences, appMode]);
 
   const bothHavePreferences = hasAnyPreferencesSet(myPreferences) && hasAnyPreferencesSet(partnerPreferences);
-  const visibleCategories = PREFERENCE_CATEGORIES;
 
-  const formatIdentity = (name: string, role: string, id: IdentityState, defaultTitle: string) => {
-      if (!id.gender && !id.pronouns && !id.orientation && !id.relationship && !role) return "";
-      
-      const titleName = name ? name.toUpperCase() : defaultTitle.replace("'S IDENTITY", "");
-      const title = `${titleName}'S IDENTITY`;
-      
-      let section = `        ❖ ── ${title} ── ❖\n`;
-      if (role) section += `🎭 Role: ${role}\n`; // <-- Added Role export
-      if (id.pronouns) section += `🗣️ Pronouns: ${id.pronouns}\n`;
-      if (id.gender) section += `👤 Gender: ${id.gender}\n`;
-      if (id.orientation) section += `🌈 Orientation: ${id.orientation}\n`;
-      if (id.relationship) section += `🔗 Dating: ${id.relationship}\n`;
-      return section + `\n`;
-    };
-
-    // And update how it's called right below it:
-    text += formatIdentity(myName, myRole, meIdentity, 'MY IDENTITY');
-    text += formatIdentity(partnerName, partnerRole, partnerIdentity, 'PARTNER IDENTITY');
-
-    text += formatIdentity(myName, meIdentity, 'MY IDENTITY');
-    text += formatIdentity(partnerName, partnerIdentity, 'PARTNER IDENTITY');
-
-    text += "        ❖ ── KINK PREFERENCES ── ❖\n";
-
-    const getScoreEmoji = (val: number | undefined) => {
-      if (val === -2) return "🔴";
-      if (val === -1) return "🟠";
-      if (val === 1) return "🟡";
-      if (val === 2) return "🟢";
-      return "⚪"; 
-    };
-
-    if (bothHavePreferences) {
-      const n1 = myName ? myName.toUpperCase() : "ME";
-      const n2 = partnerName ? partnerName.toUpperCase() : "PARTNER";
-      const namesLine = `( ${n1} | ${n2} )`;
-      
-      const padding = Math.max(0, 21 - Math.floor(namesLine.length / 2));
-      text += " ".repeat(padding) + namesLine + "\n\n";
-
-      PREFERENCE_CATEGORIES.forEach(category => {
-        let hasItems = false;
-        let catText = `✦ ${category.name.toUpperCase()} ✦\n`;
-
-        category.items.forEach(item => {
-          const val1 = myPreferences[item.key];
-          const val2 = partnerPreferences[item.key];
-          
-          if ((val1 !== undefined && val1 !== 0) || (val2 !== undefined && val2 !== 0)) {
-            const e1 = getScoreEmoji(val1);
-            const e2 = getScoreEmoji(val2);
-            catText += `  ↳ ${e1} | ${e2}  ${item.label}\n`;
-            hasItems = true;
-          }
-        });
-
-        if (hasItems) {
-          text += catText + '\n';
-        }
-      });
-    } else {
-      text += `\n`;
-      PREFERENCE_CATEGORIES.forEach(category => {
-        const allHard = category.items.every(item => myPreferences[item.key] === -2);
-        if (allHard) return; 
-
-        let catText = `✦ ${category.name.toUpperCase()} ✦\n`;
-        let hasItems = false;
-
-        category.items.forEach(item => {
-          const val = myPreferences[item.key];
-          if (val !== undefined && val !== 0) { 
-            const e1 = getScoreEmoji(val);
-            catText += `  ↳ ${e1}  ${item.label}\n`;
-            hasItems = true;
-          }
-        });
-
-        if (hasItems) {
-          text += catText + '\n';
-        }
-      });
-    }
+  const handleCopyProfile = async () => {
+    const rawText = generateProfileText({
+      myName, partnerName, myRole, partnerRole,
+      meIdentity, partnerIdentity,
+      myPreferences, partnerPreferences,
+      visibleCategories, bothHavePreferences
+    });
 
     try {
-      const getFooter = (url: string) => text + `──────────────────────\n🔗 Compare maps with me here:\n${url}`;
+      const getFooter = (url: string) => rawText + `──────────────────────\n🔗 Compare maps with me here:\n${url}`;
 
       if (navigator.clipboard && (window as any).ClipboardItem) {
         const textBlobPromise = getShareableUrl().then(url => 
@@ -242,13 +156,38 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground relative pb-20 lg:pb-0">
       <div className="container mx-auto px-4 pb-12 max-w-7xl">
         <Header />
 
         <main className="space-y-6">
           <div className="max-w-3xl mx-auto">
              <InfoSection />
+          </div>
+
+          {/* ENHANCED EXPERIENCE LEVEL SELECTOR */}
+          <div className="max-w-xl mx-auto mt-6 bg-card/80 backdrop-blur-md rounded-2xl p-2 border border-white/10 flex shadow-lg gap-2">
+            <button
+              onClick={() => setAppMode('curious')}
+              className={`flex-1 flex flex-col items-center justify-center py-3 px-1 rounded-xl transition-all duration-300 ${appMode === 'curious' ? 'bg-primary/90 text-white shadow-md scale-[1.02]' : 'text-muted-foreground hover:text-white hover:bg-white/5'}`}
+            >
+              <span className="text-xs font-bold uppercase tracking-wider">Curious</span>
+              <span className="text-[9px] opacity-70 mt-1 hidden sm:block">The Basics</span>
+            </button>
+            <button
+              onClick={() => setAppMode('advanced')}
+              className={`flex-1 flex flex-col items-center justify-center py-3 px-1 rounded-xl transition-all duration-300 ${appMode === 'advanced' ? 'bg-blue-500/90 text-white shadow-md scale-[1.02]' : 'text-muted-foreground hover:text-white hover:bg-white/5'}`}
+            >
+              <span className="text-xs font-bold uppercase tracking-wider">Advanced</span>
+              <span className="text-[9px] opacity-70 mt-1 hidden sm:block">Impact & Bondage</span>
+            </button>
+            <button
+              onClick={() => setAppMode('full')}
+              className={`flex-1 flex flex-col items-center justify-center py-3 px-1 rounded-xl transition-all duration-300 ${appMode === 'full' ? 'bg-purple-500/90 text-white shadow-md scale-[1.02]' : 'text-muted-foreground hover:text-white hover:bg-white/5'}`}
+            >
+              <span className="text-xs font-bold uppercase tracking-wider">Full</span>
+              <span className="text-[9px] opacity-70 mt-1 hidden sm:block">Everything</span>
+            </button>
           </div>
 
           <motion.div
@@ -272,7 +211,7 @@ const Index = () => {
                 <Input
                   value={myRole}
                   onChange={(e) => setMyRole(e.target.value)}
-                  placeholder="e.g., Dom"
+                  placeholder="e.g. Dom"
                   className="bg-background/50 border-white/10 rounded-xl placeholder:text-white/20 focus-visible:ring-primary/30"
                 />
               </div>
@@ -290,7 +229,7 @@ const Index = () => {
                 <Input
                   value={partnerRole}
                   onChange={(e) => setPartnerRole(e.target.value)}
-                  placeholder="e.g., sub"
+                  placeholder="e.g. sub"
                   className="bg-background/50 border-white/10 rounded-xl placeholder:text-white/20 focus-visible:ring-blue-500/30"
                 />
               </div>
@@ -298,7 +237,7 @@ const Index = () => {
             
             <button
               onClick={() => setIsIdentityModalOpen(true)}
-              className="w-full mt-4 p-3 bg-[#36454F] hover:bg-[#274D60] text-white rounded-lg font-bold transition-colors text-sm"
+              className="w-full mt-4 p-3.5 bg-gradient-to-r from-primary/10 via-background/40 to-blue-500/10 hover:from-primary/20 hover:to-blue-500/20 border border-white/10 hover:border-white/20 text-foreground/80 hover:text-foreground rounded-xl font-display font-semibold tracking-wide transition-all duration-300 shadow-sm"
             >
               How Do We Identify?
             </button>
@@ -415,7 +354,7 @@ const Index = () => {
                 <Heart className="w-6 h-6 text-primary mx-auto mb-2 opacity-50" />
                 <p className="text-sm font-medium text-foreground">
                   {hasAnyPreferencesSet(myPreferences) 
-                    ? `Almost there, share with your partner to see your score.`
+                    ? `Almost there. Share with your partner to see your score.`
                     : `Set your preferences to see your Match Score.`}
                 </p>
               </motion.div>
@@ -471,7 +410,7 @@ const Index = () => {
                   <span className="font-bold text-white/90 text-sm text-left">Where can I take a kinky partner test online?</span>
                 </AccordionTrigger>
                 <AccordionContent className="text-xs text-muted-foreground/80 pt-1 pb-4 leading-relaxed">
-                  You can take our interactive <strong>kinky partner test</strong> right here, completely free and securely. Just fill out your preferences, generate a private link, and share it with your partner to compare your <strong>bdsm</strong> and <strong>kink</strong> boundaries side-by-side.
+                  You can take our interactive <strong>kinky partner test</strong> right here, completely free and securely. Just fill out your preferences, generate a private link, and share it with your partner to compare your <strong>bdsm</strong> and <strong>kink</strong> boundaries side by side.
                 </AccordionContent>
               </AccordionItem>
 
@@ -501,7 +440,7 @@ const Index = () => {
               Consent and Safety Principles
             </h5>
             <p className="text-xs text-center text-muted-foreground mb-6">
-              When diving into BDSM, always keep these in mind:
+              When diving into BDSM, always keep these in mind.
             </p>
             
             <Accordion type="single" collapsible className="space-y-3 w-full">
@@ -537,7 +476,7 @@ const Index = () => {
                 <AccordionContent className="text-xs text-muted-foreground/80 pt-1 pb-4 leading-relaxed">
                   <ul className="space-y-3">
                     <li>
-                      <span className="text-rose-400 font-semibold text-sm min-w-[50px]">Risk-Aware</span>: RACK encourages participants to be fully aware of the risks associated with their chosen activities. This includes understanding the physical, psychological, and emotional impacts of BDSM practices and knowing how to mitigate those risks. Practitioners are urged to educate themselves on both the immediate and potential long-term effects of their activities, with the understanding that some forms of BDSM, like breath play or suspension, carry unavoidable dangers.
+                      <span className="text-rose-400 font-semibold text-sm min-w-[50px]">Risk Aware</span>: RACK encourages participants to be fully aware of the risks associated with their chosen activities. This includes understanding the physical, psychological, and emotional impacts of BDSM practices and knowing how to mitigate those risks. Practitioners are urged to educate themselves on both the immediate and potential long term effects of their activities, with the understanding that some forms of BDSM, like breath play or suspension, carry unavoidable dangers.
                     </li>
                     <li>
                       <span className="text-rose-400 font-semibold text-sm min-w-[50px]">Consensual</span>: Consent is central to RACK, with an emphasis on informed and enthusiastic consent. RACK encourages detailed negotiations and discussions so that all participants understand and agree to the potential risks involved. Consent is ongoing, and participants can withdraw it at any time.
@@ -558,7 +497,7 @@ const Index = () => {
                 </AccordionTrigger>
                 <AccordionContent className="text-xs text-muted-foreground/80 pt-1 pb-4 leading-relaxed">
                   <p>
-                    <span className="text-rose-400 font-semibold">Personal responsibility, informed, consensual kink (PRICK)</span> is a BDSM consent model that emphasizes each participant’s responsibility to understand the risks, communicate openly, and make informed choices about the activities they engage in. Unlike models that focus mainly on "safety" or "sanity," PRICK acknowledges that BDSM inherently involves risk, and prioritizes self-awareness, negotiation, and active, informed consent over the illusion of complete safety. It encourages players to educate themselves, take ownership of their limits, and be accountable for their participation.
+                    <span className="text-rose-400 font-semibold">Personal responsibility, informed, consensual kink (PRICK)</span> is a BDSM consent model that emphasizes each participant’s responsibility to understand the risks, communicate openly, and make informed choices about the activities they engage in. Unlike models that focus mainly on "safety" or "sanity," PRICK acknowledges that BDSM inherently involves risk, and prioritizes self awareness, negotiation, and active, informed consent over the illusion of complete safety. It encourages players to educate themselves, take ownership of their limits, and be accountable for their participation.
                   </p>
                 </AccordionContent>
               </AccordionItem>
@@ -572,22 +511,22 @@ const Index = () => {
                 </AccordionTrigger>
                 <AccordionContent className="text-xs text-muted-foreground/80 pt-1 pb-4 leading-relaxed">
                   <div className="space-y-3">
-                    <p>The Freely Given, Reversible, Informed, Enthusiastic, Specific (FRIES) model of consent is a consent model used in broader sex education, especially around teaching consent in general. FRIES is an acronym for the following:</p>
+                    <p>The Freely Given, Reversible, Informed, Enthusiastic, Specific (FRIES) model of consent is a consent model used in broader sex education, especially around teaching consent in general. FRIES is an acronym for the following.</p>
                     <ul className="space-y-3">
                       <li>
-                        <span className="text-rose-400 font-semibold text-sm min-w-[50px]">Freely Given</span>: A "yes" should come without any pressure or the feeling that there will be repercussions to saying "no." Are you feeling pressured into your 'yes'? Are they a host and you feel like you won't be invited again if you say no? Are you feeling like you have to go along with your peer group? Then your consent is not "freely given".
+                        <span className="text-rose-400 font-semibold text-sm min-w-[50px]">Freely Given</span>: A "yes" should come without any pressure or the feeling that there will be repercussions to saying "no." Are you feeling pressured into your yes? Are they a host and you feel like you won't be invited again if you say no? Are you feeling like you have to go along with your peer group? Then your consent is not freely given.
                       </li>
                       <li>
                         <span className="text-rose-400 font-semibold text-sm min-w-[50px]">Reversible</span>: Yes can turn to no at any point, for any reason. There isn't a stage where someone cannot say stop.
                       </li>
                       <li>
-                        <span className="text-rose-400 font-semibold text-sm min-w-[50px]">Informed</span>: The person must fully understand what they are agreeing to. That includes any possible risks, or long-term effects such as marks (and how long they'll last).
+                        <span className="text-rose-400 font-semibold text-sm min-w-[50px]">Informed</span>: The person must fully understand what they are agreeing to. That includes any possible risks, or long term effects such as marks.
                       </li>
                       <li>
-                        <span className="text-rose-400 font-semibold text-sm min-w-[50px]">Enthusiastic</span>: True consent is an enthusiastic "yes, please!" not something like "ummm, yeah...I guess?" Anything less than ENTHUSIASTIC consent should be taken as a no!
+                        <span className="text-rose-400 font-semibold text-sm min-w-[50px]">Enthusiastic</span>: True consent is an enthusiastic "yes, please!" not something like "ummm, yeah...I guess?" Anything less than ENTHUSIASTIC consent should be taken as a no.
                       </li>
                       <li>
-                        <span className="text-rose-400 font-semibold text-sm min-w-[50px]">Specific</span>: Make sure what you are saying yes to is all-encompassing of the thing you are about to do. Do not add in other elements that weren't discussed and agreed to.
+                        <span className="text-rose-400 font-semibold text-sm min-w-[50px]">Specific</span>: Make sure what you are saying yes to is all encompassing of the thing you are about to do. Do not add in other elements that weren't discussed and agreed to.
                       </li>
                     </ul>
                   </div>
@@ -622,36 +561,40 @@ const Index = () => {
                 Made in <span className="text-rose-400">Antarctica</span>
               </p>               
               <p className="text-[10px] uppercase tracking-widest font-semibold">
-                © 2026 The <span className="text-rose-400">Kinky</span> Map,v2.1.0
+                © 2026 The <span className="text-rose-400">Kinky</span> Map, v2.1.5
               </p>
             </div>
           </div>
         </footer>
 
-        {/* ENHANCED EXPERIENCE LEVEL SELECTOR */}
-          <div className="max-w-xl mx-auto mt-6 bg-card/80 backdrop-blur-md rounded-2xl p-2 border border-white/10 flex shadow-lg gap-2">
-            <button
-              onClick={() => setAppMode('curious')}
-              className={`flex-1 flex flex-col items-center justify-center py-3 px-1 rounded-xl transition-all duration-300 ${appMode === 'curious' ? 'bg-primary/90 text-white shadow-md scale-[1.02]' : 'text-muted-foreground hover:text-white hover:bg-white/5'}`}
-            >
-              <span className="text-xs font-bold uppercase tracking-wider">Curious</span>
-              <span className="text-[9px] opacity-70 mt-1 hidden sm:block">The Basics</span>
-            </button>
-            <button
-              onClick={() => setAppMode('advanced')}
-              className={`flex-1 flex flex-col items-center justify-center py-3 px-1 rounded-xl transition-all duration-300 ${appMode === 'advanced' ? 'bg-blue-500/90 text-white shadow-md scale-[1.02]' : 'text-muted-foreground hover:text-white hover:bg-white/5'}`}
-            >
-              <span className="text-xs font-bold uppercase tracking-wider">Advanced</span>
-              <span className="text-[9px] opacity-70 mt-1 hidden sm:block">Impact & Bondage</span>
-            </button>
-            <button
-              onClick={() => setAppMode('full')}
-              className={`flex-1 flex flex-col items-center justify-center py-3 px-1 rounded-xl transition-all duration-300 ${appMode === 'full' ? 'bg-purple-500/90 text-white shadow-md scale-[1.02]' : 'text-muted-foreground hover:text-white hover:bg-white/5'}`}
-            >
-              <span className="text-xs font-bold uppercase tracking-wider">Full</span>
-              <span className="text-[9px] opacity-70 mt-1 hidden sm:block">Everything</span>
-            </button>
+        {/* MOBILE STICKY ACTION BAR - Now safely inside the container */}
+        <div className="lg:hidden fixed bottom-4 left-4 right-4 z-40">
+          <div className="bg-card/95 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl p-3 flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Match Score</span>
+              <span className="text-lg font-bold text-primary">
+                {bothHavePreferences ? `${matchResult.overallScore}%` : 'Pending'}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleCopyProfile} size="sm" className="bg-[#1a1a20] border border-white/10 rounded-xl">
+                <Copy className="w-4 h-4" />
+              </Button>
+              <ShareButtons getShareableUrl={getShareableUrl} />
+            </div>
           </div>
+        </div>
+
+        {/* IDENTITY MODAL - Restored */}
+        <IdentityModal
+          isOpen={isIdentityModalOpen}
+          onClose={() => setIsIdentityModalOpen(false)}
+          meIdentity={meIdentity}
+          setMeIdentity={setMeIdentity}
+          partnerIdentity={partnerIdentity}
+          setPartnerIdentity={setPartnerIdentity}
+          myName={myName}
+          partnerName={partnerName}
         />
         
       </div>
