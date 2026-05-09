@@ -1,33 +1,58 @@
-import { useState, useCallback, useEffect } from 'react';
-import LZString from 'lz-string';
-import { supabase } from '@/lib/supabase';
-import { Preferences, PreferenceValue, PREFERENCE_CATEGORIES } from '@/data/preferences';
-import { IdentityState, defaultIdentity } from '../IdentityData';
+import { useState, useEffect } from 'react';
+// ... keep your other imports here
 
-const STORAGE_KEY = 'kinky_map_preferences';
+const STORAGE_KEY = 'kinkymap_save_data';
 
-interface StoredState {
-  me: Preferences;
-  partner: Preferences;
-  myName: string;
-  partnerName: string;
-  myRole: string;
-  partnerRole: string;
-  meIdentity?: IdentityState;
-  partnerIdentity?: IdentityState;
-}
+export const usePreferences = () => {
+  // 1. Load saved data before initializing state
+  const loadSavedData = () => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error("Failed to load local storage", e);
+    }
+    return null;
+  };
 
-const getDefaultPreferences = (): Preferences => {
-  const prefs: Preferences = {};
-  PREFERENCE_CATEGORIES.forEach(cat => {
-    cat.items.forEach(item => {
-      prefs[item.key] = 0;
-    });
-  });
-  return prefs;
-};
+  const savedData = loadSavedData();
 
-// Keep old encoding for fallback
+  // 2. Initialize state with saved data or defaults
+  const [myPreferences, setMyPreferences] = useState<Preferences>(savedData?.myPreferences || {});
+  const [partnerPreferences, setPartnerPreferences] = useState<Preferences>(savedData?.partnerPreferences || {});
+  const [myName, setMyName] = useState(savedData?.myName || '');
+  const [partnerName, setPartnerName] = useState(savedData?.partnerName || '');
+  const [myRole, setMyRole] = useState(savedData?.myRole || '');
+  const [partnerRole, setPartnerRole] = useState(savedData?.partnerRole || '');
+  const [meIdentity, setMeIdentity] = useState<IdentityState>(savedData?.meIdentity || defaultIdentity);
+  const [partnerIdentity, setPartnerIdentity] = useState<IdentityState>(savedData?.partnerIdentity || defaultIdentity);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // 3. Auto save to local storage whenever any state changes
+  useEffect(() => {
+    const dataToSave = {
+      myPreferences, partnerPreferences,
+      myName, partnerName,
+      myRole, partnerRole,
+      meIdentity, partnerIdentity
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+  }, [myPreferences, partnerPreferences, myName, partnerName, myRole, partnerRole, meIdentity, partnerIdentity]);
+
+
+  // 4. Update your resetAll function so it also clears the storage
+  const resetAll = () => {
+    setMyPreferences({});
+    setPartnerPreferences({});
+    setMyName('');
+    setPartnerName('');
+    setMyRole('');
+    setPartnerRole('');
+    setMeIdentity(defaultIdentity);
+    setPartnerIdentity(defaultIdentity);
+    localStorage.removeItem(STORAGE_KEY);
+  };
+
 const encodeState = (state: StoredState): string => {
   try {
     return LZString.compressToEncodedURIComponent(JSON.stringify(state));
