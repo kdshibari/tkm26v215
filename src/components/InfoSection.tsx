@@ -60,6 +60,31 @@ export const InfoSection = () => {
                       <li>Have water, snacks, or blankets ready.</li>
                       <li>Discuss feelings and provide physical comfort.</li>
                     </ul>
+                    <div className="max-w-3xl mx-auto">
+             <InfoSection />
+          </div>
+
+          {/* NEW EXPERIENCE LEVEL SELECTOR */}
+          <div className="max-w-md mx-auto mt-6 bg-card/80 backdrop-blur-md rounded-2xl p-1.5 border border-white/10 flex shadow-lg">
+            <button
+              onClick={() => setAppMode('curious')}
+              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${appMode === 'curious' ? 'bg-primary text-white shadow-md' : 'text-muted-foreground hover:text-white hover:bg-white/5'}`}
+            >
+              Curious
+            </button>
+            <button
+              onClick={() => setAppMode('advanced')}
+              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${appMode === 'advanced' ? 'bg-blue-500 text-white shadow-md' : 'text-muted-foreground hover:text-white hover:bg-white/5'}`}
+            >
+              Advanced
+            </button>
+            <button
+              onClick={() => setAppMode('full')}
+              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${appMode === 'full' ? 'bg-purple-500 text-white shadow-md' : 'text-muted-foreground hover:text-white hover:bg-white/5'}`}
+            >
+              Full
+            </button>
+          </div>
                   </div>
                 </div>
               </div>
