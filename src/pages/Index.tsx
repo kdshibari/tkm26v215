@@ -22,6 +22,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { PREFERENCE_CATEGORIES, AppMode } from '@/data/preferences';
 
 const Index = () => {
   const {
