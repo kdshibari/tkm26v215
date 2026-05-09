@@ -23,6 +23,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { PREFERENCE_CATEGORIES, AppMode } from '@/data/preferences';
+const [activeTab, setActiveTab] = useState('me');
+  const [isIdentityModalOpen, setIsIdentityModalOpen] = useState(false);
+  const [appMode, setAppMode] = useState<AppMode>('full'); // <--- ADD THIS
+  const { toast } = useToast();
 
 const Index = () => {
   const {
